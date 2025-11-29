@@ -143,7 +143,7 @@ ENABLE_PERFORMANCE_METRICS=false
 
 ### File Structure
 
-
+```bash
 ~/.local/share/student_mgmt/
 ├── students.csv              # Main database
 └── backups/                  # Automatic backups
@@ -156,6 +156,7 @@ ENABLE_PERFORMANCE_METRICS=false
 ~/.local/state/student_mgmt/
 ├── student_mgmt.log          # Application logs
 └── student_mgmt.pid          # Process ID file
+```
 
 ### CSV Format (RFC 4180)
 
