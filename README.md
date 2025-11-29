@@ -110,10 +110,8 @@ ENABLE_PERFORMANCE_METRICS=false
 
 ---
 
-## 📸 Screenshots
-
 ### Main Menu
-
+```bash
 ╔═══════════════════════════════════════════════════╗
 ║                                                   ║
 ║        🎓 Student Management System v4.0.0        ║
@@ -138,7 +136,7 @@ ENABLE_PERFORMANCE_METRICS=false
  10) 🔄 Restore Backup
  11) 📜 View Logs
   0) 🚪 Exit
-
+```
 ---
 
 ## 🏗️ Architecture
@@ -169,17 +167,22 @@ ID,StudentCode,FirstName,LastName,Email,Phone,GPA,RegistrationDate
 ### Key Technical Details
 
 #### 1. Thread-Safe Operations
+```bash
 bash
 acquire_lock() {
 exec {LOCK_FD}>"$LOCK_FILE"
 flock -x -w "$LOCK_TIMEOUT" "$LOCK_FD" || return 1
 }
+```
 
 #### 2. RFC 4180 CSV Parsing
+```bash
 bash
 awk -F',' 'BEGIN { FPAT = "([^,]*)|(\"([^\"]|\"\")*\")" }'
+```
 
 #### 3. Atomic Writes with Retry
+```bash
 bash
 atomic_write() {
 for ((i=1; i<=MAX_RETRIES; i++)); do
@@ -190,6 +193,7 @@ sleep 0.$((RANDOM % 100))
 done
 return 1
 }
+```
 
 ---
 
