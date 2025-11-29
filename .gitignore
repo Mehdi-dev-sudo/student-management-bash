@@ -1,0 +1,41 @@
+# Data files
+*.csv
+students.csv
+!examples/sample_students.csv
+
+# Log files
+*.log
+*.log.*
+
+# Lock files
+*.lock
+*.idlock
+.pid
+
+# Backup directory
+backups/
+
+# Temporary files
+.tmp.*
+tmp/
+temp/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Linux
+*~
+.directory
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
+
+# Config (keep sample)
+config.conf
+!examples/sample_config.conf
