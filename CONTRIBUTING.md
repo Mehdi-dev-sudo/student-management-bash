@@ -12,6 +12,7 @@ Be respectful, inclusive, and professional.
 ```bash
 git clone https://github.com/Mehdi-dev-sudo/student-management-bash.git
 cd student-management-bash
+```
 
 ### 2. Create a Branch
 bash
