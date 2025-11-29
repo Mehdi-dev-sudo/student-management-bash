@@ -16,7 +16,7 @@ cd student-management-bash
 
 ### 2. Create a Branch
 bash
-git checkout -b feature/your-feature-name
+git checkout -b feature
 
 ### 3. Make Changes
 - Follow existing code style
