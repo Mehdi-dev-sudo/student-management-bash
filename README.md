@@ -1,4 +1,4 @@
-# 🎓 Student Management System v4.0.0
+# 🎓 Student Management System v4.1.0
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Bash Version](https://img.shields.io/badge/Bash-4.4%2B-green.svg)](https://www.gnu.org/software/bash/)
@@ -14,29 +14,31 @@ A production-grade, thread-safe student management system written in pure Bash. 
 ## ✨ Features
 
 ### 🔒 Enterprise-Grade Reliability
-- **Thread-safe operations** with `flock`-based locking
+- **Thread-safe operations** with directory-based locking
 - **RFC 4180 compliant** CSV parsing (handles quotes, commas, newlines)
 - **Atomic writes** with retry logic
 - **Single instance protection** via PID file
+- **POSIX-compatible** (no GNU-specific dependencies)
 
 ### 📊 Core Functionality
 - ➕ **CRUD Operations**: Add, Edit, Delete, View students
-- 🔍 **Search**: Multi-field search (name, code, email)
+- 🔍 **Search**: Multi-field case-insensitive search (name, code, email)
 - 📈 **Statistics**: GPA distribution, averages, rankings
-- 📤 **Export**: JSON export with metadata
+- 📤 **Export**: JSON and clean CSV export with metadata
 
 ### 🛡️ Security & Validation
 - ✅ Input sanitization (removes control characters)
 - ✅ Email validation (RFC 5322 compliant)
 - ✅ Phone number validation (Iranian format)
-- ✅ Student code uniqueness checks
-- ✅ SQL injection prevention
+- ✅ Student code uniqueness checks (8-10 digits)
+- ✅ GPA validation (0-20 range)
 
 ### 🔧 System Management
 - 💾 **Automatic backups** with rotation (keeps last 10)
 - 📜 **Multi-level logging** (DEBUG, INFO, WARN, ERROR)
 - ⚡ **Performance metrics** tracking
 - 🎨 **Colorized output** with UTF-8 icons
+- 🔄 **Backup restore** with safety snapshot
 
 ---
 
@@ -45,34 +47,45 @@ A production-grade, thread-safe student management system written in pure Bash. 
 ### System Requirements
 - **OS**: Linux or macOS
 - **Bash**: 4.4 or higher
-- **Tools**: `awk`, `sed`, `grep`, `flock`
+- **Tools**: `awk`, `sed`, `grep`, `flock` (util-linux)
 
 ### Check dependencies:
 ```bash
 ./student_management.sh --check-deps
+```
 
 ---
 
 ## 🚀 Quick Start
 
 ### 1. Clone the repository
+```bash
 git clone https://github.com/Mehdi-dev-sudo/student-management-bash.git
 cd student-management-bash
+```
 
 ### 2. Make executable
-bash
+```bash
 chmod +x student_management.sh
+chmod +x tests/run_tests.sh
+```
 
 ### 3. Run
-bash
+```bash
 ./student_management.sh
+```
+
+### 4. Run tests
+```bash
+./tests/run_tests.sh
+```
 
 ---
 
 ## 📖 Usage
 
 ### Basic Commands
-bash
+```bash
 # Run normally
 ./student_management.sh
 
@@ -88,11 +101,21 @@ bash
 # Enable performance metrics
 ./student_management.sh --performance
 
+# Export database to clean CSV
+./student_management.sh --export-csv
+
+# Check dependencies
+./student_management.sh --check-deps
+
+# Initialize/repair system directories
+./student_management.sh --init
+```
+
 ### Configuration
 
-Edit `~/.config/student_mgmt/config.conf`:
+Edit `~/.config/student-mgmt/config`:
 
-bash
+```bash
 # Maximum number of backups to keep
 MAX_BACKUPS=10
 
@@ -107,6 +130,7 @@ LOG_LEVEL=INFO
 
 # Enable performance metrics
 ENABLE_PERFORMANCE_METRICS=false
+```
 
 ---
 
@@ -114,7 +138,7 @@ ENABLE_PERFORMANCE_METRICS=false
 ```bash
 ╔═══════════════════════════════════════════════════╗
 ║                                                   ║
-║        🎓 Student Management System v4.0.0        ║
+║        🎓 Student Management System v4.1.0        ║
 ║             Enterprise Grade Edition              ║
 ║                                                   ║
 ╚═══════════════════════════════════════════════════╝
@@ -137,62 +161,59 @@ ENABLE_PERFORMANCE_METRICS=false
  11) 📜 View Logs
   0) 🚪 Exit
 ```
+
 ---
 
 ## 🏗️ Architecture
 
 ### File Structure
 
-```bash
-~/.local/share/student_mgmt/
+```
+~/.local/share/student-mgmt/
 ├── students.csv              # Main database
 └── backups/                  # Automatic backups
-├── students_20250929_143022_auto.csv
-└── students_20250929_120000_manual.csv
+    ├── students_20250929_143022_auto.csv
+    └── students_20250929_120000_manual.csv
 
-~/.config/student_mgmt/
-└── config.conf               # User configuration
+~/.config/student-mgmt/
+└── config                    # User configuration
 
-~/.local/state/student_mgmt/
-├── student_mgmt.log          # Application logs
-└── student_mgmt.pid          # Process ID file
+~/.cache/student-mgmt/        # Cache directory
+~/.local/share/student-mgmt/
+├── app.log                   # Application logs
+└── .lock/                    # Lock directory
 ```
 
 ### CSV Format (RFC 4180)
 
-csv
+```csv
 ID,StudentCode,FirstName,LastName,Email,Phone,GPA,RegistrationDate
-1,"STU001","John","Doe","john@example.com","09123456789",18.50,"2025-11-29"
-2,"STU002","Jane","Smith","jane@example.com","09187654321",16.75,"2025-11-29"
+1,STU001,John,Doe,john@example.com,09123456789,18.50,2025-11-29 14:30:22
+2,STU002,Jane,Smith,jane@example.com,09187654321,16.75,2025-11-29 14:31:05
+```
 
 ### Key Technical Details
 
 #### 1. Thread-Safe Operations
 ```bash
-bash
 acquire_lock() {
-exec {LOCK_FD}>"$LOCK_FILE"
-flock -x -w "$LOCK_TIMEOUT" "$LOCK_FD" || return 1
+    while ! mkdir "$LOCK_FILE" 2>/dev/null; do
+        sleep 1
+    done
 }
 ```
 
 #### 2. RFC 4180 CSV Parsing
 ```bash
-bash
-awk -F',' 'BEGIN { FPAT = "([^,]*)|(\"([^\"]|\"\")*\")" }'
+awk 'BEGIN { FPAT = "([^,]*)|(\"([^\"]|\"\")*\")" }'
 ```
 
 #### 3. Atomic Writes with Retry
 ```bash
-bash
 atomic_write() {
-for ((i=1; i<=MAX_RETRIES; i++)); do
-if mv "$temp_file" "$target_file" 2>/dev/null; then
-return 0
-fi
-sleep 0.$((RANDOM % 100))
-done
-return 1
+    local temp_file
+    temp_file="$(mktemp "${target}.XXXXXX")"
+    cat > "$temp_file" && mv "$temp_file" "$target"
 }
 ```
 
@@ -200,12 +221,23 @@ return 1
 
 ## 🧪 Testing
 
-bash
-# Test validation functions
-./tests/test_validation.sh
+```bash
+# Run all tests
+./tests/run_tests.sh
 
-# Test CSV parsing
+# Run individual test suites
+./tests/test_validation.sh
 ./tests/test_csv_parsing.sh
+```
+
+The test suite covers:
+- GPA validation (boundary values, invalid input)
+- Email validation (RFC 5322 pattern)
+- Phone validation (Iranian format with/without separators)
+- Student code validation (length, format)
+- Input sanitization (trim, control chars)
+- CSV escaping (quotes, commas, special chars)
+- CSV parsing (simple, quoted fields, multi-line)
 
 ---
 
@@ -214,27 +246,31 @@ bash
 ### Common Issues
 
 #### 1. Permission Denied
-bash
+```bash
 chmod +x student_management.sh
+```
 
 #### 2. Lock Timeout
-bash
+```bash
 # Increase timeout in config
 LOCK_TIMEOUT=30
+```
 
 #### 3. Bash Version Too Old
-bash
+```bash
 # Check version
 bash --version
 
 # Upgrade (Ubuntu/Debian)
 sudo apt update && sudo apt install --only-upgrade bash
+```
 
 #### 4. Corrupted Database
-bash
+```bash
 # Restore from backup
 ./student_management.sh
 # Select option 10 (Restore Backup)
+```
 
 ---
 
@@ -261,15 +297,14 @@ Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Test thoroughly
+4. Run tests: `./tests/run_tests.sh`
 5. Submit a pull request
 
 ### Code Style
 
 - Use 4 spaces for indentation
-- Add comments for complex logic
 - Follow existing naming conventions
-- Keep functions under 50 lines
+- Keep functions focused on single responsibility
 
 ---
 
@@ -277,12 +312,18 @@ Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 
 See [CHANGELOG.md](CHANGELOG.md) for version history.
 
+### v4.1.0 (2026-07-25)
+- Unified locking mechanism (directory-based only)
+- POSIX-compatible backup operations
+- Test suite with validation and CSV parsing tests
+- Case-insensitive search (portable)
+- Clean CSV export (--export-csv)
+- Fixed mixed locking, missing timers, and URL in help
+
 ### v4.0.0 (2025-11-29)
-- Added CLI arguments (`--help`, `--version`, `--debug`)
-- Implemented performance metrics
-- Enhanced error handling with stack trace
-- Added single instance protection
-- Improved retry logic for I/O operations
+- CLI arguments (--help, --version, --debug)
+- Performance metrics and enhanced error handling
+- Single instance protection
 
 ---
 
@@ -297,7 +338,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 **Mehdi Khorshidi Far**
 - GitHub: [@Mehdi-dev-sudo](https://github.com/Mehdi-dev-sudo)
 - Email: mehdi.khorshidi333@gmail.com
-- Location: Amol, Iran 
+- Location: Amol, Iran
 
 ---
 
