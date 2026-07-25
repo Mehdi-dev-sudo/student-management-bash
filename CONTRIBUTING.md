@@ -25,7 +25,14 @@ git checkout -b feature
 
 ### 4. Test
 bash
-# Run the script
+# Run the test suite
+./tests/run_tests.sh
+
+# Run individual tests
+./tests/test_validation.sh
+./tests/test_csv_parsing.sh
+
+# Run the script in debug mode
 ./student_management.sh --debug
 
 # Test edge cases
@@ -102,4 +109,4 @@ local arg2="$2"
 
 ## Questions?
 
-Open an issue or contact: mehdi.khorshidi9339@gmail.com
+Open an issue or contact: mehdi.khorshidi333@gmail.com
