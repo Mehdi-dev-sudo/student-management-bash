@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
 # ==============================================================================
-# Student Management System - Enterprise Grade v4.0
-# Version: 4.0.0
+# Student Management System - Enterprise Grade v4.1
+# Version: 4.1.0
 # License: MIT
 # Author: Mehdi-dev-sudo  mehdi.khorshidi333@gmail.com
 # Repository: github.com/Mehdi-dev-sudo/student-management-bash
@@ -21,7 +21,7 @@ IFS=$'\n\t'
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
-readonly APP_VERSION="4.0.0"
+readonly APP_VERSION="4.1.0"
 readonly APP_NAME="Student Management System"
 
 # XDG Base Directory Specification compliance
@@ -96,19 +96,8 @@ log() {
         caller_info=" [${BASH_SOURCE[2]##*/}:${BASH_LINENO[1]}:${FUNCNAME[2]}]"
     fi
     
-    # Write to log file with retry logic
-    local retry_count=0
-    while (( retry_count < MAX_RETRIES )); do
-        if {
-            flock -x -w 5 200
-            echo "[$timestamp] [$level]${caller_info:-} $msg" >> "$LOG_FILE"
-        } 200>"$LOG_FILE.lock" 2>/dev/null; then
-            break
-        else
-            ((retry_count++))
-            sleep 0.1
-        fi
-    done
+    # Write to log file (writes < PIPE_BUF are atomic on POSIX systems)
+    echo "[$timestamp] [$level]${caller_info:-} $msg" >> "$LOG_FILE" 2>/dev/null || true
     
     # Console output with colors
     case "$level" in
@@ -390,19 +379,15 @@ validate_phone() {
 
 validate_student_code() {
     local code="$1"
-    local exclude_id="${2:-}"  # For edit operation
+    local exclude_id="${2:-}"
     
-    # Format check: 8-10 digits
     [[ "$code" =~ ^[0-9]{8,10}$ ]] || return 1
     
-    # Uniqueness check using AWK (field 2 is student code)
     if [[ -f "$CSV_FILE" ]]; then
-        awk -F',' -v code="$code" -v exclude_id="$exclude_id" '
+        awk -v code="$code" -v exclude_id="$exclude_id" '
             BEGIN { FPAT = "([^,]*)|(\"([^\"]|\"\")*\")" }
             NR > 1 {
-                # Skip if this is the record being edited
                 if (exclude_id != "" && $1 == exclude_id) next
-                
                 gsub(/^"|"$/, "", $2)
                 if ($2 == code) exit 1
             }
@@ -568,16 +553,17 @@ create_backup() {
 cleanup_old_backups() {
     local backup_count
     
-    backup_count=$(find "$BACKUP_DIR" -name "students_*.csv" 2>/dev/null | wc -l)
+    backup_count=$(ls -1 "$BACKUP_DIR"/students_*.csv 2>/dev/null | wc -l)
     
     if (( backup_count > MAX_BACKUPS )); then
         log DEBUG "Cleaning up old backups (current: $backup_count, max: $MAX_BACKUPS)"
         
-        find "$BACKUP_DIR" -name "students_*.csv" -type f -printf '%T@ %p\n' 2>/dev/null | \
-            sort -n | \
-            head -n -"$MAX_BACKUPS" | \
-            cut -d' ' -f2- | \
-            xargs -r rm -f
+        # Remove oldest backups beyond MAX_BACKUPS (portable: ls -t sorts by time)
+        ls -1t "$BACKUP_DIR"/students_*.csv 2>/dev/null | \
+            tail -n +"$((MAX_BACKUPS + 1))" | \
+            while IFS= read -r old_backup; do
+                rm -f "$old_backup" 2>/dev/null || true
+            done
         
         log DEBUG "Backup cleanup completed"
     fi
@@ -592,10 +578,12 @@ restore_backup() {
     
     acquire_lock
     
-    # Create safety backup
-    if ! cp "$CSV_FILE" "$CSV_FILE.before_restore.$(date +%s)" 2>/dev/null; then
-        release_lock
-        die "Failed to create safety backup"
+    # Create safety backup of current database (if it exists)
+    if [[ -f "$CSV_FILE" ]]; then
+        if ! cp "$CSV_FILE" "$CSV_FILE.before_restore.$(date +%s)" 2>/dev/null; then
+            release_lock
+            die "Failed to create safety backup"
+        fi
     fi
     
     # Restore with retry
@@ -700,24 +688,11 @@ add_student() {
     new_line+=",$(csv_escape "$gpa")"
     new_line+=",$(csv_escape "$reg_date")"
     
-    # Atomic append with retry
-    local retry_count=0
-    while (( retry_count < MAX_RETRIES )); do
-        if {
-            flock -x -w 5 200
-            echo "$new_line" >> "$CSV_FILE"
-        } 200>"$CSV_FILE.lock" 2>/dev/null; then
-            break
-        else
-            ((retry_count++))
-            sleep 0.1
-        fi
-    done
-    
-    if (( retry_count >= MAX_RETRIES )); then
+    # Append under directory lock protection
+    echo "$new_line" >> "$CSV_FILE" || {
         release_lock
-        die "Failed to add student after $MAX_RETRIES attempts"
-    fi
+        die "Failed to add student to database"
+    }
     
     release_lock
     
@@ -804,7 +779,7 @@ view_student_details() {
     }
     
     local student_data
-    student_data=$(awk -F',' -v id="$student_id" '
+    student_data=$(awk -v id="$student_id" '
         BEGIN { FPAT = "([^,]*)|(\"([^\"]|\"\")*\")" }
         NR > 1 && $1 == id {
             for (i = 1; i <= NF; i++) {
@@ -822,7 +797,6 @@ view_student_details() {
         return 1
     fi
     
-    # Parse fields
     local -a fields
     mapfile -t fields <<< "$student_data"
     
@@ -860,7 +834,7 @@ edit_student() {
     
     # Get current data
     local current_data
-    current_data=$(awk -F',' -v id="$student_id" '
+    current_data=$(awk -v id="$student_id" '
         BEGIN { FPAT = "([^,]*)|(\"([^\"]|\"\")*\")" }
         NR > 1 && $1 == id {
             for (i = 1; i <= NF; i++) {
@@ -972,7 +946,7 @@ edit_student() {
     new_line+=",$(csv_escape "$new_gpa")"
     new_line+=",$(csv_escape "${old_fields[7]}")"
     
-    awk -F',' -v id="$student_id" -v newline="$new_line" '
+    awk -v id="$student_id" -v newline="$new_line" '
         BEGIN { FPAT = "([^,]*)|(\"([^\"]|\"\")*\")" }
         NR == 1 { print; next }
         $1 == id { print newline; next }
@@ -1014,7 +988,7 @@ delete_student() {
     
     # Get student info
     local student_data
-    student_data=$(awk -F',' -v id="$student_id" '
+    student_data=$(awk -v id="$student_id" '
         BEGIN { FPAT = "([^,]*)|(\"([^\"]|\"\")*\")" }
         NR > 1 && $1 == id {
             for (i = 1; i <= NF; i++) {
@@ -1054,7 +1028,7 @@ delete_student() {
     local temp_file
     temp_file="$(mktemp)"
     
-    awk -F',' -v id="$student_id" '
+    awk -v id="$student_id" '
         BEGIN { FPAT = "([^,]*)|(\"([^\"]|\"\")*\")" }
         NR == 1 { print; next }
         $1 != id { print }
@@ -1096,10 +1070,10 @@ search_students() {
     echo -e "\n${C_CYAN}Search Results:${C_RESET}\n"
     
     local results
-    results=$(awk -F',' -v term="$search_term" -v cyan="$C_CYAN" -v reset="$C_RESET" -v green="$C_GREEN" -v bold="$C_BOLD" '
+    results=$(awk -v term="$search_term" -v cyan="$C_CYAN" -v reset="$C_RESET" -v green="$C_GREEN" -v bold="$C_BOLD" '
         BEGIN {
             FPAT = "([^,]*)|(\"([^\"]|\"\")*\")"
-            IGNORECASE = 1
+            term = tolower(term)
             found = 0
         }
         
@@ -1118,8 +1092,8 @@ search_students() {
                 gsub(/""/, "\"", $i)
             }
             
-            # Search in code, first name, last name, email
-            if ($2 ~ term || $3 ~ term || $4 ~ term || $5 ~ term) {
+            # Case-insensitive search in code, first name, last name, email
+            if (tolower($2) ~ term || tolower($3) ~ term || tolower($4) ~ term || tolower($5) ~ term) {
                 printf "%-5s %-12s %-15s %-15s %-25s %-8s\n",
                        $1, $2, substr($3, 1, 15), substr($4, 1, 15), 
                        substr($5, 1, 25), $7
@@ -1159,7 +1133,7 @@ show_statistics() {
     
     [[ ! -f "$CSV_FILE" ]] && die "Database file not found"
     
-    awk -F',' -v green="$C_GREEN" -v yellow="$C_YELLOW" -v red="$C_RED" -v cyan="$C_CYAN" -v reset="$C_RESET" '
+    awk -v green="$C_GREEN" -v yellow="$C_YELLOW" -v red="$C_RED" -v cyan="$C_CYAN" -v reset="$C_RESET" '
         BEGIN {
             FPAT = "([^,]*)|(\"([^\"]|\"\")*\")"
             total = 0
@@ -1225,7 +1199,7 @@ export_to_json() {
     
     log INFO "Exporting to JSON..."
     
-    awk -F',' '
+    awk '
         BEGIN {
             FPAT = "([^,]*)|(\"([^\"]|\"\")*\")"
             print "{"
@@ -1262,7 +1236,7 @@ export_to_json() {
             print "  ],"
             printf "  \"exportDate\": \"%s\",\n", strftime("%Y-%m-%d %H:%M:%S")
             printf "  \"totalRecords\": %d,\n", NR-1
-            printf "  \"version\": \"4.0.0\"\n"
+            printf "  \"version\": \"4.1.0\"\n"
             print "}"
         }
     ' "$CSV_FILE" > "$output_file"
@@ -1271,6 +1245,40 @@ export_to_json() {
     
     end_timer
     read -rsp $'\n'"$(echo -e "${C_CYAN}Press Enter to continue...${C_RESET}")"
+}
+
+export_clean_csv() {
+    local output_file="${1:-"$DATA_DIR/students_export_$(date +%Y%m%d_%H%M%S).csv"}"
+    
+    log INFO "Exporting clean CSV to: $output_file"
+    
+    if [[ ! -f "$CSV_FILE" ]]; then
+        log ERROR "No database to export"
+        return 1
+    fi
+    
+    # Copy CSV with header only if it exists and has data
+    awk '
+        BEGIN { FPAT = "([^,]*)|(\"([^\"]|\"\")*\")" }
+        NR == 1 { print; next }
+        {
+            for (i = 1; i <= NF; i++) {
+                gsub(/^"|"$/, "", $i)
+                gsub(/""/, "\"", $i)
+            }
+            # Re-escape properly
+            for (i = 1; i <= NF; i++) {
+                if ($i ~ /[,"\n]/) {
+                    gsub(/"/, "\"\"", $i)
+                    $i = "\"" $i "\""
+                }
+            }
+            print
+        }
+    ' "$CSV_FILE" > "$output_file"
+    
+    log SUCCESS "Clean CSV exported: $output_file"
+    echo "$output_file"
 }
 
 # ==============================================================================
@@ -1291,6 +1299,7 @@ ${C_BOLD}OPTIONS:${C_RESET}
     -p, --performance       Enable performance metrics
     --check-deps            Check system dependencies
     --init                  Initialize/repair system directories
+    --export-csv            Export database to clean CSV file
 
 ${C_BOLD}CONFIGURATION:${C_RESET}
     Config file: $CONFIG_FILE
@@ -1337,7 +1346,7 @@ ${C_BOLD}LICENSE:${C_RESET}
     MIT License
 
 ${C_BOLD}REPOSITORY:${C_RESET}
-    github.com/username/student-mgmt
+    github.com/Mehdi-dev-sudo/student-management-bash
 
 EOF
 }
@@ -1357,6 +1366,8 @@ show_version() {
 
 view_logs() {
     clear
+    start_timer
+    
     echo -e "${C_CYAN}${C_BOLD}"
     echo "═══════════════════════════════════════════════"
     echo "          📜 Recent Logs (Last 50 lines)"
@@ -1382,22 +1393,23 @@ view_logs() {
         log WARN "No logs found"
     fi
     
+    end_timer
     read -rsp $'\n\n'"$(echo -e "${C_CYAN}Press Enter to continue...${C_RESET}")"
 }
 
 list_backups() {
     clear
+    start_timer
+    
     echo -e "${C_CYAN}${C_BOLD}"
     echo "═══════════════════════════════════════════════"
     echo "          💾 Available Backups"
     echo "═══════════════════════════════════════════════"
     echo -e "${C_RESET}\n"
     
-    local backups
-    backups=$(find "$BACKUP_DIR" -name "students_*.csv" -type f -printf '%T@ %p\n' 2>/dev/null | \
-              sort -rn | \
-              awk '{$1=""; print $0}' | \
-              sed 's/^ //')
+    local backups backups_array
+    # Portable: ls -1t lists files sorted by modification time (newest first)
+    backups=$(ls -1t "$BACKUP_DIR"/students_*.csv 2>/dev/null || true)
     
     if [[ -z "$backups" ]]; then
         log WARN "No backups found"
@@ -1405,12 +1417,19 @@ list_backups() {
         return
     fi
     
-    echo "$backups" | nl -w2 -s') ' | while IFS= read -r line; do
-        # Highlight recent backups (less than 1 day old)
-        if echo "$line" | grep -q "$(date +%Y%m%d)"; then
-            echo -e "${C_GREEN}$line${C_RESET}"
+    mapfile -t backups_array <<< "$backups"
+    local count=${#backups_array[@]}
+    
+    for i in "${!backups_array[@]}"; do
+        local line_num=$((i + 1))
+        local backup_file="${backups_array[$i]}"
+        local display_name
+        display_name=$(basename "$backup_file")
+        
+        if echo "$display_name" | grep -q "$(date +%Y%m%d)"; then
+            echo -e "${C_GREEN}${line_num}) ${display_name}${C_RESET}"
         else
-            echo "$line"
+            echo "${line_num}) ${display_name}"
         fi
     done
     
@@ -1418,17 +1437,14 @@ list_backups() {
     
     read -rp "$(echo -e "${C_BLUE}Enter backup number to restore (0 to cancel): ${C_RESET}")" choice
     
-    if [[ "$choice" =~ ^[0-9]+$ ]] && (( choice > 0 )); then
-        local selected_backup
-        selected_backup=$(echo "$backups" | sed -n "${choice}p")
-        
-        if [[ -n "$selected_backup" ]]; then
-            restore_backup "$selected_backup"
-        else
-            log ERROR "Invalid selection"
-        fi
+    if [[ "$choice" =~ ^[0-9]+$ ]] && (( choice > 0 && choice <= count )); then
+        local selected_backup="${backups_array[$((choice - 1))]}"
+        restore_backup "$selected_backup"
+    elif [[ "$choice" != "0" ]]; then
+        log ERROR "Invalid selection"
     fi
     
+    end_timer
     read -rsp $'\n'"$(echo -e "${C_CYAN}Press Enter to continue...${C_RESET}")"
 }
 
@@ -1442,7 +1458,7 @@ show_menu() {
     cat << 'EOF'
 ╔═══════════════════════════════════════════════════╗
 ║                                                   ║
-║        🎓 Student Management System v4.0.0        ║
+║        🎓 Student Management System v4.1.0        ║
 ║             Enterprise Grade Edition              ║
 ║                                                   ║
 ╚═══════════════════════════════════════════════════╝
@@ -1513,6 +1529,11 @@ parse_arguments() {
                 init_system
                 log SUCCESS "System initialized"
                 exit 0
+                ;;
+            --export-csv)
+                init_system
+                export_clean_csv
+                exit $?
                 ;;
             *)
                 echo -e "${C_RED}Unknown option: $1${C_RESET}" >&2
