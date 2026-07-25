@@ -1,10 +1,32 @@
-```markdown
 # Changelog
 
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [4.1.0] - 2026-07-25
+
+### Added
+- `--export-csv` CLI flag for exporting clean CSV
+- Test suite in `tests/` directory with validation and CSV parsing tests
+- Test runner script (`tests/run_tests.sh`)
+- Case-insensitive search (portable `tolower()` instead of gawk-specific `IGNORECASE`)
+- `start_timer`/`end_timer` to `view_logs` and `list_backups` functions
+
+### Changed
+- Unified locking mechanism (removed mixed usage of directory lock + `flock` on fd 200)
+- Simplified `log()` function (removed redundant `flock`; uses atomic append)
+- Simplified `add_student()` append (uses directory lock, no extra `flock`)
+- Made backup listing POSIX-compatible (replaced GNU `find -printf` with `ls -1t`)
+- Made backup cleanup POSIX-compatible (portable `ls -t` + `tail` + `rm`)
+- Removed redundant `-F','` from AWK calls that set `FPAT`
+- Updated repository URL in help section
+
+### Fixed
+- `restore_backup()` now handles missing CSV file gracefully
+- Safety backup in `restore_backup()` only created if CSV exists
+- Fixed email in CONTRIBUTING.md
 
 ## [4.0.0] - 2025-11-29
 
