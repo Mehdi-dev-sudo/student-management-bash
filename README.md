@@ -1,13 +1,14 @@
-# 🎓 Student Management System v4.1.0
+# 🎓 Student Management System v5.0.0
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Bash Version](https://img.shields.io/badge/Bash-4.4%2B-green.svg)](https://www.gnu.org/software/bash/)
 [![Platform](https://img.shields.io/badge/Platform-Linux%20%7C%20macOS-blue.svg)]()
+[![Version](https://img.shields.io/badge/Version-5.0.0-cyan.svg)]()
 
 [![GitHub](https://img.shields.io/badge/GitHub-Mehdi--dev--sudo-blue?logo=github)](https://github.com/Mehdi-dev-sudo)
-[![Email](https://img.shields.io/badge/Email-mehdi.khorshidi333%40gmail.com-red?logo=gmail)](mailto:mehdi.khorshidi333@gmail.com)
+[![Email](https://img.shields.io/badge/Email-mehdi%40code--watch.dev-red?logo=gmail)](mailto:mehdi@code-watch.dev)
 
-A production-grade, thread-safe student management system written in pure Bash. Features enterprise-level error handling, RFC 4180 compliant CSV operations, and comprehensive logging.
+> A production-grade, thread-safe student management system written in pure Bash. Features enterprise-level error handling, RFC 4180 compliant CSV operations, bilingual support, and a professional terminal UI with charts and visual indicators.
 
 ---
 
@@ -23,8 +24,24 @@ A production-grade, thread-safe student management system written in pure Bash. 
 ### 📊 Core Functionality
 - ➕ **CRUD Operations**: Add, Edit, Delete, View students
 - 🔍 **Search**: Multi-field case-insensitive search (name, code, email)
-- 📈 **Statistics**: GPA distribution, averages, rankings
+- 📈 **Statistics**: GPA distribution with visual charts, averages, rankings
 - 📤 **Export**: JSON and clean CSV export with metadata
+- 📥 **Import**: Batch CSV import with duplicate detection
+- 🧮 **GPA Calculator**: Weighted GPA calculation with visual feedback
+
+### 🌐 Bilingual Support
+- 🇺🇸 **English** interface
+- 🇮🇷 **فارسی (Persian)** interface
+- Easy language switching from settings menu
+- Command-line language selection: `--lang fa`
+
+### 🎨 Professional Terminal UI
+- **Box drawing characters** for clean layout
+- **Color-coded GPA** indicators (green/yellow/red)
+- **Visual progress bars** for statistics
+- **Professional menu system** with icons and descriptions
+- **Status bar** showing system health
+- **Section headers** with visual separators
 
 ### 🛡️ Security & Validation
 - ✅ Input sanitization (removes control characters)
@@ -37,8 +54,8 @@ A production-grade, thread-safe student management system written in pure Bash. 
 - 💾 **Automatic backups** with rotation (keeps last 10)
 - 📜 **Multi-level logging** (DEBUG, INFO, WARN, ERROR)
 - ⚡ **Performance metrics** tracking
-- 🎨 **Colorized output** with UTF-8 icons
 - 🔄 **Backup restore** with safety snapshot
+- ⚙️ **Settings menu** for runtime configuration
 
 ---
 
@@ -75,7 +92,12 @@ chmod +x tests/run_tests.sh
 ./student_management.sh
 ```
 
-### 4. Run tests
+### 4. Run in Persian
+```bash
+./student_management.sh --lang fa
+```
+
+### 5. Run tests
 ```bash
 ./tests/run_tests.sh
 ```
@@ -100,6 +122,12 @@ chmod +x tests/run_tests.sh
 
 # Enable performance metrics
 ./student_management.sh --performance
+
+# Set language to Persian
+./student_management.sh --lang fa
+
+# Set language to English
+./student_management.sh --lang en
 
 # Export database to clean CSV
 ./student_management.sh --export-csv
@@ -130,36 +158,54 @@ LOG_LEVEL=INFO
 
 # Enable performance metrics
 ENABLE_PERFORMANCE_METRICS=false
+
+# Language mode (en or fa)
+LANG_MODE=en
 ```
 
 ---
 
 ### Main Menu
-```bash
-╔═══════════════════════════════════════════════════╗
-║                                                   ║
-║        🎓 Student Management System v4.1.0        ║
-║             Enterprise Grade Edition              ║
-║                                                   ║
-╚═══════════════════════════════════════════════════╝
 
-📝 CRUD Operations:
-  1) ➕ Add New Student
-  2) 📋 Display All Students
-  3) 👤 View Student Details
-  4) ✏️  Edit Student
-  5) 🗑️  Delete Student
+```
+╔═══════════════════════════════════════════════════════════════════════════════╗
+║                                                                               ║
+║           🎓 Student Management System v5.0.0                                ║
+║                    Professional Edition                                       ║
+║                                                                               ║
+╚═══════════════════════════════════════════════════════════════════════════════╝
 
-🔍 Search & Reports:
-  6) 🔍 Search Students
-  7) 📊 Show Statistics
-  8) 📤 Export to JSON
+  🗄 Students: 0  |  🛡 Backups: 0  |  ⚡ Status: Healthy
 
-⚙️  System:
-  9) 💾 Create Manual Backup
- 10) 🔄 Restore Backup
- 11) 📜 View Logs
-  0) 🚪 Exit
+┌─── CRUD Operations - Manage student records ───┐
+                                                  │
+  1) ➕ Add New Student                           │
+  2) 📋 View All Students                         │
+  3) 👤 View Student Details                      │
+  4) ✏️  Edit Student                              │
+  5) 🗑️  Delete Student                           │
+└─────────────────────────────────────────────────┘
+
+┌─── Search & Reports - Find and analyze data ───┐
+                                                  │
+  6) 🔍 Search Students                           │
+  7) 📊 Statistics & Analytics                    │
+  8) 📤 Export to JSON                            │
+  9) 📥 Import from CSV                           │
+  10) 🧮 GPA Calculator                           │
+└─────────────────────────────────────────────────┘
+
+┌─── System - Backup, logs, settings ────────────┐
+                                                  │
+  11) 💾 Create Manual Backup                     │
+  12) 🔄 Restore Backup                           │
+  13) 📜 System Logs                              │
+  14) ⚙️  Settings                                 │
+  0) 🚪 Exit                                      │
+└─────────────────────────────────────────────────┘
+
+═══════════════════════════════════════════════════════════════════════════════
+  💡 Tip: Use --lang fa for Persian, --lang en for English
 ```
 
 ---
@@ -205,7 +251,7 @@ acquire_lock() {
 
 #### 2. RFC 4180 CSV Parsing
 ```bash
-awk 'BEGIN { FPAT = "([^,]*)|(\"([^\"]|\"\")*\")" }'
+awk 'BEGIN { FPAT = "([^,]*)|(\\\"([^\\\"]|\\\"\\\")*\\\")" }'
 ```
 
 #### 3. Atomic Writes with Retry
@@ -214,6 +260,28 @@ atomic_write() {
     local temp_file
     temp_file="$(mktemp "${target}.XXXXXX")"
     cat > "$temp_file" && mv "$temp_file" "$target"
+}
+```
+
+#### 4. Bilingual Message System
+```bash
+declare -A MSG_EN=(
+    ["title"]="Student Management System"
+    ["add_student"]="Add New Student"
+)
+
+declare -A MSG_FA=(
+    ["title"]="سیستم مدیریت دانشجویان"
+    ["add_student"]="افزودن دانشجوی جدید"
+)
+
+msg() {
+    local key="$1"
+    if [[ "$LANG_MODE" == "fa" ]]; then
+        echo "${MSG_FA[$key]:-$key}"
+    else
+        echo "${MSG_EN[$key]:-$key}"
+    fi
 }
 ```
 
@@ -228,16 +296,16 @@ atomic_write() {
 # Run individual test suites
 ./tests/test_validation.sh
 ./tests/test_csv_parsing.sh
+./tests/test_features.sh
 ```
 
-The test suite covers:
-- GPA validation (boundary values, invalid input)
-- Email validation (RFC 5322 pattern)
-- Phone validation (Iranian format with/without separators)
-- Student code validation (length, format)
-- Input sanitization (trim, control chars)
-- CSV escaping (quotes, commas, special chars)
-- CSV parsing (simple, quoted fields, multi-line)
+### Test Coverage
+
+| Test Suite | Tests |
+|-----------|-------|
+| **Validation** | GPA, email, phone, student code, input sanitization, bilingual support |
+| **CSV Parsing** | Escape, parse, roundtrip, special characters, Persian text, emoji |
+| **Features** | Bilingual support, UI components, version info, author info |
 
 ---
 
@@ -269,7 +337,7 @@ sudo apt update && sudo apt install --only-upgrade bash
 ```bash
 # Restore from backup
 ./student_management.sh
-# Select option 10 (Restore Backup)
+# Select option 12 (Restore Backup)
 ```
 
 ---
@@ -278,11 +346,12 @@ sudo apt update && sudo apt install --only-upgrade bash
 
 | Operation | Time (1000 records) |
 |-----------|---------------------|
-| Add       | ~0.05s              |
-| Search    | ~0.02s              |
-| Edit      | ~0.08s              |
-| Delete    | ~0.06s              |
-| Export JSON | ~0.15s            |
+| Add | ~0.05s |
+| Search | ~0.02s |
+| Edit | ~0.08s |
+| Delete | ~0.06s |
+| Export JSON | ~0.15s |
+| Import CSV | ~0.10s |
 
 *Tested on: Intel i5-8250U, 8GB RAM, SSD*
 
@@ -305,6 +374,7 @@ Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 - Use 4 spaces for indentation
 - Follow existing naming conventions
 - Keep functions focused on single responsibility
+- Add tests for new features
 
 ---
 
@@ -312,17 +382,29 @@ Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) first.
 
 See [CHANGELOG.md](CHANGELOG.md) for version history.
 
+### v5.0.0 (2026-08-30)
+- ✨ Bilingual support (English/Persian)
+- ✨ Professional terminal UI with box drawing and charts
+- ✨ GPA Calculator with weighted calculation
+- ✨ Batch CSV import with duplicate detection
+- ✨ Settings menu for runtime configuration
+- ✨ Visual progress bars and status indicators
+- ✨ Color-coded GPA display
+- ✨ Enhanced statistics with visual charts
+- ✨ Comprehensive test suite (validation, CSV, features)
+- 🔧 Improved code organization and documentation
+- 🔧 Updated author email to mehdi@code-watch.dev
+
 ### v4.1.0 (2026-07-25)
-- Unified locking mechanism (directory-based only)
+- Unified locking mechanism
 - POSIX-compatible backup operations
 - Test suite with validation and CSV parsing tests
-- Case-insensitive search (portable)
-- Clean CSV export (--export-csv)
-- Fixed mixed locking, missing timers, and URL in help
+- Case-insensitive search
+- Clean CSV export
 
 ### v4.0.0 (2025-11-29)
-- CLI arguments (--help, --version, --debug)
-- Performance metrics and enhanced error handling
+- CLI arguments
+- Performance metrics
 - Single instance protection
 
 ---
@@ -336,8 +418,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 👨‍💻 Author
 
 **Mehdi Khorshidi Far**
+
 - GitHub: [@Mehdi-dev-sudo](https://github.com/Mehdi-dev-sudo)
-- Email: mehdi.khorshidi333@gmail.com
+- Email: [mehdi@code-watch.dev](mailto:mehdi@code-watch.dev)
 - Location: Amol, Iran
 
 ---
@@ -352,14 +435,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📚 Additional Resources
 
-- [Bash Best Practices](https://mywiki.wooledge.org/BashGuide/Practices)
+- [Bash Best Practices](https://google.github.io/shellguide/)
 - [RFC 4180 (CSV Format)](https://tools.ietf.org/html/rfc4180)
 - [AWK Programming Guide](https://www.gnu.org/software/gawk/manual/)
-
----
-
-## ⭐ Star History
-
-If you find this project useful, please consider giving it a star!
-
-[![Star History Chart](https://api.star-history.com/svg?repos=Mehdi-dev-sudo/student-management-bash&type=Date)](https://star-history.com/#Mehdi-dev-sudo/student-management-bash&Date)

@@ -5,6 +5,62 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [5.0.0] - 2026-08-30
+
+### Added
+- **Bilingual Support**: Full English/Persian interface
+  - `--lang en` and `--lang fa` command-line options
+  - Settings menu language switcher
+  - 30+ translated message strings
+- **Professional Terminal UI**:
+  - Unicode box drawing characters (╔═╗║╚═╝)
+  - Color-coded GPA display (green/yellow/red)
+  - Visual progress bars for statistics
+  - Section headers with visual separators
+  - Status bar showing system health
+  - Professional menu system with icons and descriptions
+- **GPA Calculator** (`menu option 10`)
+  - Weighted GPA calculation
+  - Course-by-course entry
+  - Visual feedback and interpretation
+- **Batch CSV Import** (`menu option 9`)
+  - Import from external CSV files
+  - Duplicate detection (student code)
+  - Preview before import
+  - Automatic backup before/after import
+- **Settings Menu** (`menu option 14`)
+  - Change language at runtime
+  - Configure max backups
+  - Change log level
+  - Toggle performance metrics
+- **Enhanced Statistics**:
+  - Visual bar charts for GPA distribution
+  - Data integrity score
+  - Top/bottom student indicators
+- **New Test Suite**: `tests/test_features.sh`
+  - Bilingual support tests
+  - UI component tests
+  - Version and author info tests
+- **Color System**:
+  - Professional color palette with combos (C_HEADER, C_SUCCESS, C_ERROR, etc.)
+  - Color-coded table rows
+  - Dim/muted text for secondary information
+
+### Changed
+- Complete UI overhaul with professional terminal design
+- Menu structure reorganized into 3 sections (CRUD, Search & Reports, System)
+- Statistics display now includes visual charts
+- Log viewer uses improved color coding
+- Author email updated to mehdi@code-watch.dev
+- Version bumped to 5.0.0
+
+### Improved
+- Input validation error messages now more descriptive
+- Student details view uses light box drawing
+- Table headers use proper separators (─ instead of ━)
+- Menu items include descriptions for better UX
+- Status bar shows live student count and backup count
+
 ## [4.1.0] - 2026-07-25
 
 ### Added

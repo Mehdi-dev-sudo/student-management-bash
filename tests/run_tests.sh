@@ -17,10 +17,10 @@ for test_file in "$SCRIPT_DIR"/test_*.sh; do
     
     if bash "$test_file"; then
         echo -e "\033[0;32m  ✓ $test_name passed\033[0m\n"
-        ((PASS++))
+        PASS=$((PASS + 1))
     else
         echo -e "\033[0;31m  ✗ $test_name failed\033[0m\n"
-        ((FAIL++))
+        FAIL=$((FAIL + 1))
     fi
 done
 
